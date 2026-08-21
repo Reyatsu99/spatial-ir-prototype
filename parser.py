@@ -1,10 +1,12 @@
 """
 Parser to convert natural language descriptions of architectural spaces into Spatial IR.
+Supports rule-based extraction as well as local LLM server integration.
 """
 
 import re
 from typing import List, Dict, Tuple, Optional, Set
 from spatial_ir import SpatialIR, Space, SpatialRelation, RelationType
+from llm_parser import LocalLLMSpatialParser
 
 # Common room keywords and canonical spatial relations
 KNOWN_ROOM_TYPES = [
@@ -14,7 +16,6 @@ KNOWN_ROOM_TYPES = [
 ]
 
 RELATION_PATTERNS = [
-    # (Regex pattern, RelationType)
     (r"\b(adjacent to|next to|beside|shares a wall with|connected to|adjoins)\b", RelationType.ADJACENT),
     (r"\b(far from|far away from|distant from|far off from)\b", RelationType.FAR),
     (r"\b(near|close to|in proximity to|nearby)\b", RelationType.NEAR),
@@ -22,8 +23,11 @@ RELATION_PATTERNS = [
 ]
 
 class SpatialNLParser:
-    def __init__(self):
-        pass
+    def __init__(self, local_llm_url: Optional[str] = None):
+        """
+        Initialize parser. If local_llm_url is provided, it attempts to use the local LLM server.
+        """
+        self.llm_parser = LocalLLMSpatialParser(api_url=local_llm_url) if local_llm_url else None
 
     def _normalize_id(self, raw_name: str) -> str:
         clean = raw_name.lower().strip()
@@ -38,13 +42,11 @@ class SpatialNLParser:
         text_lower = text.lower()
         found_spaces: Dict[str, Space] = {}
 
-        # Track matched spans in text to prevent matching sub-phrases like 'bedroom' inside 'master bedroom'
         matched_spans: List[Tuple[int, int]] = []
 
         for room_type in KNOWN_ROOM_TYPES:
             for match in re.finditer(rf"\b{re.escape(room_type)}\b", text_lower):
                 start, end = match.span()
-                # Check if this span overlaps with an already matched longer span
                 if any(m_start <= start and end <= m_end for m_start, m_end in matched_spans):
                     continue
 
@@ -62,15 +64,22 @@ class SpatialNLParser:
     def parse(self, text: str) -> SpatialIR:
         """
         Parse a natural language text describing 3-5 spaces and their relations into a SpatialIR object.
+        Uses local LLM if available, otherwise falls back to rule-based parsing.
         """
+        if self.llm_parser and self.llm_parser.is_server_available():
+            ir = self.llm_parser.parse(text)
+            if ir:
+                return ir
+
+        # Fallback to local rule-based parsing
         spatial_ir = SpatialIR()
         spatial_ir.metadata["raw_description"] = text
+        spatial_ir.metadata["parsed_by"] = "Rule-Based Parser"
 
         spaces = self.extract_spaces_from_text(text)
         for s in spaces:
             spatial_ir.add_space(s)
 
-        # Split sentences/clauses on punctuation or explicit conjunctions
         clauses = re.split(r"[.;\n]|(?:\band\b)", text)
 
         for clause in clauses:
@@ -78,7 +87,6 @@ class SpatialNLParser:
             if not clause:
                 continue
 
-            # Determine relation type in this clause
             detected_rel: Optional[RelationType] = None
             for pattern, rtype in RELATION_PATTERNS:
                 if re.search(pattern, clause, re.IGNORECASE):
@@ -86,13 +94,11 @@ class SpatialNLParser:
                     break
 
             if not detected_rel or detected_rel == RelationType.CONTAINS:
-                # 'contains' in room listings e.g., 'The house contains a foyer, living room...' is listing, not pairwise relation
                 continue
 
             clause_lower = clause.lower()
             present_spaces: List[str] = []
 
-            # Match spaces sorted by length descending so longer room names match first
             sorted_spaces = sorted(spatial_ir.spaces, key=lambda s: len(s.name), reverse=True)
             matched_clause_spans: List[Tuple[int, int]] = []
 
@@ -106,7 +112,6 @@ class SpatialNLParser:
                             if space.id not in present_spaces:
                                 present_spaces.append(space.id)
 
-            # Pair adjacent matched spaces in clause
             if len(present_spaces) >= 2:
                 source_id = present_spaces[0]
                 target_id = present_spaces[1]
