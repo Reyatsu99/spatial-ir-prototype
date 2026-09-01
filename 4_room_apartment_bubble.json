@@ -1,0 +1,114 @@
+{
+  "rooms": [
+    {
+      "id": "master_bedroom",
+      "name": "Master Bedroom",
+      "room_type": "master_bedroom",
+      "type_idx": 1,
+      "area_hint": 20.0,
+      "pos": [
+        0.242,
+        0.5326
+      ],
+      "bbox": [
+        0.0184,
+        0.309,
+        0.4656,
+        0.7562
+      ]
+    },
+    {
+      "id": "living_room",
+      "name": "Living Room",
+      "room_type": "living_room",
+      "type_idx": 0,
+      "area_hint": 25.0,
+      "pos": [
+        0.9,
+        0.2718
+      ],
+      "bbox": [
+        0.65,
+        0.0218,
+        1.0,
+        0.5218
+      ]
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "room_type": "kitchen",
+      "type_idx": 2,
+      "area_hint": 12.0,
+      "pos": [
+        0.5865,
+        0.1
+      ],
+      "bbox": [
+        0.4133,
+        0.0,
+        0.7597,
+        0.2732
+      ]
+    },
+    {
+      "id": "bathroom",
+      "name": "Bathroom",
+      "room_type": "bathroom",
+      "type_idx": 3,
+      "area_hint": 6.0,
+      "pos": [
+        0.1,
+        0.9
+      ],
+      "bbox": [
+        0.0,
+        0.7775,
+        0.2225,
+        1.0
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "living_room",
+      "target": "kitchen",
+      "relation": "ADJACENT"
+    },
+    {
+      "source": "master_bedroom",
+      "target": "bathroom",
+      "relation": "ADJACENT"
+    }
+  ],
+  "adjacency_matrix": [
+    [
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0
+    ]
+  ],
+  "metadata": {
+    "total_rooms": 4,
+    "total_door_connections": 2
+  }
+}
