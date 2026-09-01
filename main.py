@@ -1,20 +1,19 @@
 """
-CLI Demo for Spatial IR Parser, Validator, Visualizer, and Layout Generator.
-Runs the complete minimal prototype pipeline end-to-end:
-NL Text Description -> Structured Spatial IR JSON -> Constraint Validation -> Graph & Bubble Diagram Visualizations
+CLI Demo for Minimal Spatial IR Prototype.
+Converts natural language descriptions of spaces into structured JSON Spatial IR
+and validates room existence, adjacency properties, and near/far logical constraints.
 """
 
 import json
 from parser import SpatialNLParser
 from validator import SpatialValidator
 from visualizer import visualize
-from layout import ir_to_bubble_diagram, save_bubble_diagram, visualize_bubble_diagram
 from spatial_ir import SpatialIR, SpatialRelation, RelationType
 
 def print_section(title: str):
-    print("\n" + "=" * 75)
+    print("\n" + "=" * 70)
     print(f" {title}")
-    print("=" * 75)
+    print("=" * 70)
 
 def run_demo():
     parser = SpatialNLParser()
@@ -42,13 +41,8 @@ def run_demo():
 
     if res_1.is_valid:
         g_path = visualize(spatial_ir_1, output_path="4_room_apartment_graph.png", title="4-Room Apartment Adjacency Graph")
-        b_diagram = ir_to_bubble_diagram(spatial_ir_1)
-        j_path = save_bubble_diagram(b_diagram, "4_room_apartment_bubble.json")
-        b_path = visualize_bubble_diagram(b_diagram, output_path="4_room_apartment_bubble.png", title="4-Room Apartment Bubble Diagram")
-        print("\n[3] Generated Visual Artifacts:")
-        print(f"   ✓ Room Graph PNG       -> {g_path}")
-        print(f"   ✓ Bubble Diagram PNG   -> {b_path}")
-        print(f"   ✓ Bubble Schema JSON   -> {j_path}")
+        print("\n[3] Generated Visual Artifact:")
+        print(f"   ✓ Room Adjacency Graph PNG -> {g_path}")
 
     # Scenario 2: Invalid Floorplan with Spatial Contradictions
     print_section("SCENARIO 2: Floorplan with Spatial Contradictions & Missing Rooms")
@@ -92,13 +86,8 @@ def run_demo():
 
     if res_3.is_valid:
         g_path3 = visualize(spatial_ir_3, output_path="5_room_house_graph.png", title="5-Room House Adjacency Graph")
-        b_diagram3 = ir_to_bubble_diagram(spatial_ir_3)
-        j_path3 = save_bubble_diagram(b_diagram3, "5_room_house_bubble.json")
-        b_path3 = visualize_bubble_diagram(b_diagram3, output_path="5_room_house_bubble.png", title="5-Room House Bubble Diagram")
-        print("\n[3] Generated Visual Artifacts:")
-        print(f"   ✓ Room Graph PNG       -> {g_path3}")
-        print(f"   ✓ Bubble Diagram PNG   -> {b_path3}")
-        print(f"   ✓ Bubble Schema JSON   -> {j_path3}")
+        print("\n[3] Generated Visual Artifact:")
+        print(f"   ✓ Room Adjacency Graph PNG -> {g_path3}")
 
 if __name__ == "__main__":
     run_demo()
