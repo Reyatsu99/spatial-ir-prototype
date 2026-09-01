@@ -1,17 +1,20 @@
 """
-CLI Demo for Spatial IR Parser & Validator.
-Takes natural language descriptions of 3–5 spaces, converts to structured JSON Spatial IR, and runs spatial validation.
+CLI Demo for Spatial IR Parser, Validator, Visualizer, and Layout Generator.
+Runs the complete minimal prototype pipeline end-to-end:
+NL Text Description -> Structured Spatial IR JSON -> Constraint Validation -> Graph & Bubble Diagram Visualizations
 """
 
 import json
 from parser import SpatialNLParser
 from validator import SpatialValidator
-from spatial_ir import SpatialIR, Space, SpatialRelation, RelationType
+from visualizer import visualize
+from layout import ir_to_bubble_diagram, save_bubble_diagram, visualize_bubble_diagram
+from spatial_ir import SpatialIR, SpatialRelation, RelationType
 
 def print_section(title: str):
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 75)
     print(f" {title}")
-    print("=" * 70)
+    print("=" * 75)
 
 def run_demo():
     parser = SpatialNLParser()
@@ -30,32 +33,40 @@ def run_demo():
     print("Input Text:\n", nl_desc_1.strip())
     
     spatial_ir_1 = parser.parse(nl_desc_1)
-    print("\nGenerated Spatial IR (JSON):")
+    print("\n[1] Generated Spatial IR (JSON):")
     print(spatial_ir_1.to_json(indent=2))
 
     res_1 = validator.validate(spatial_ir_1)
-    print("\nValidation Result:")
+    print("\n[2] Spatial Validation Result:")
     print(json.dumps(res_1.to_dict(), indent=2))
 
-    # Scenario 2: Invalid Floorplan with Spatial Contradictions (Existence + Direct Near/Far Conflict + Self Adjacency)
+    if res_1.is_valid:
+        g_path = visualize(spatial_ir_1, output_path="4_room_apartment_graph.png", title="4-Room Apartment Adjacency Graph")
+        b_diagram = ir_to_bubble_diagram(spatial_ir_1)
+        j_path = save_bubble_diagram(b_diagram, "4_room_apartment_bubble.json")
+        b_path = visualize_bubble_diagram(b_diagram, output_path="4_room_apartment_bubble.png", title="4-Room Apartment Bubble Diagram")
+        print("\n[3] Generated Visual Artifacts:")
+        print(f"   ✓ Room Graph PNG       -> {g_path}")
+        print(f"   ✓ Bubble Diagram PNG   -> {b_path}")
+        print(f"   ✓ Bubble Schema JSON   -> {j_path}")
+
+    # Scenario 2: Invalid Floorplan with Spatial Contradictions
     print_section("SCENARIO 2: Floorplan with Spatial Contradictions & Missing Rooms")
     
-    # Construct invalid Spatial IR to showcase validator edge cases
     spatial_ir_2 = parser.parse(
         "The living room is adjacent to the kitchen. "
         "The kitchen is far from the living room. "
         "The master bedroom is near the dining room."
     )
-    
-    # Introduce an explicit bad relation with a non-existent space and self-adjacency
     spatial_ir_2.add_relation(SpatialRelation(source="kitchen", target="garage", relation_type=RelationType.ADJACENT))
     spatial_ir_2.add_relation(SpatialRelation(source="living_room", target="living_room", relation_type=RelationType.ADJACENT))
 
-    print("\nGenerated Spatial IR (JSON):")
+    print("Input Text:\n", "The living room is adjacent to the kitchen. The kitchen is far from the living room...")
+    print("\n[1] Generated Spatial IR (JSON):")
     print(spatial_ir_2.to_json(indent=2))
 
     res_2 = validator.validate(spatial_ir_2)
-    print("\nValidation Result:")
+    print("\n[2] Spatial Validation Result:")
     print(json.dumps(res_2.to_dict(), indent=2))
 
     # Scenario 3: Valid 5-Space House Description
@@ -72,12 +83,22 @@ def run_demo():
     print("Input Text:\n", nl_desc_3.strip())
 
     spatial_ir_3 = parser.parse(nl_desc_3)
-    print("\nGenerated Spatial IR (JSON):")
+    print("\n[1] Generated Spatial IR (JSON):")
     print(spatial_ir_3.to_json(indent=2))
 
     res_3 = validator.validate(spatial_ir_3)
-    print("\nValidation Result:")
+    print("\n[2] Spatial Validation Result:")
     print(json.dumps(res_3.to_dict(), indent=2))
+
+    if res_3.is_valid:
+        g_path3 = visualize(spatial_ir_3, output_path="5_room_house_graph.png", title="5-Room House Adjacency Graph")
+        b_diagram3 = ir_to_bubble_diagram(spatial_ir_3)
+        j_path3 = save_bubble_diagram(b_diagram3, "5_room_house_bubble.json")
+        b_path3 = visualize_bubble_diagram(b_diagram3, output_path="5_room_house_bubble.png", title="5-Room House Bubble Diagram")
+        print("\n[3] Generated Visual Artifacts:")
+        print(f"   ✓ Room Graph PNG       -> {g_path3}")
+        print(f"   ✓ Bubble Diagram PNG   -> {b_path3}")
+        print(f"   ✓ Bubble Schema JSON   -> {j_path3}")
 
 if __name__ == "__main__":
     run_demo()
